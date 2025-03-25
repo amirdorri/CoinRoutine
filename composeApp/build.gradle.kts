@@ -75,15 +75,24 @@ kotlin {
 }
 
 android {
+
+    buildFeatures {
+        buildConfig = true
+    }
+
     namespace = "dev.coinroutine.app"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
+
         applicationId = "dev.coinroutine.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+       // buildConfigField("String", "API_KEY", "\"${project.findProperty("API_KEY")}\"")
+        buildConfigField("String", "API_KEY", "\"${project.findProperty("API_KEY")}\"")
+
     }
     packaging {
         resources {
@@ -106,6 +115,7 @@ room {
 }
 
 dependencies {
+    implementation(libs.firebase.crashlytics.buildtools)
     ksp(libs.room.compiler)
     debugImplementation(compose.uiTooling)
 }

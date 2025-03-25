@@ -15,13 +15,14 @@ kotlin-date-time = "0.6.1"
 kotlinx-serialization = "1.7.3"
 kotlinx-coroutines-test = "1.9.0"
 androidx-lifecycle = "2.8.4"
-room = "2.7.0-alpha12"
+room = "2.7.0-rc02"
 sqlite = "2.5.0-SNAPSHOT"
 koin = "4.0.0"
 biometry = "1.1.0"
 assertK = "0.25"
 turbine = "0.7.0"
 core-ktx = "1.7.0"
+firebaseCrashlyticsBuildtools = "3.0.3"
 
 [libraries]
 # Shared Libraries
@@ -70,6 +71,7 @@ coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil-compose" 
 
 # Biometry Libraries
 biometric = { module = "androidx.biometric:biometric", version.ref = "biometry" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
