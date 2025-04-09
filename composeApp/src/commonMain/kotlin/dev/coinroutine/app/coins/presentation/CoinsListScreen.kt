@@ -1,7 +1,9 @@
 package dev.coinroutine.app.coins.presentation
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,18 +33,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import dev.coinroutine.app.coins.presentation.component.PerformanceChart
 import dev.coinroutine.app.theme.LocalCoinRoutineColorsPalette
+import org.koin.compose.viewmodel.koinViewModel
 
 
 @Composable
 fun CoinsListScreen(
     onCoinClicked : (String) -> Unit
 ) {
-    val coinsListViewModel = viewModel(CoinsListViewModel::class)
+    val coinsListViewModel = koinViewModel<CoinsListViewModel>()
     val state by coinsListViewModel.state.collectAsStateWithLifecycle()
     CoinsListContent(
         state = state,
-        onCoinClicked = onCoinClicked
+        onCoinLongPress = { coinId -> coinsListViewModel.onCoinLongPressed(coinId)},
+        onCoinClicked = onCoinClicked,
+        onDismissChart = { coinsListViewModel.onDismissChart() }
     )
 }
 
@@ -47,6 +56,8 @@ fun CoinsListScreen(
 @Composable
 fun CoinsListContent(
     state: CoinsState,
+    onDismissChart: () -> Unit,
+    onCoinLongPress: (String) -> Unit,
     onCoinClicked: (String) -> Unit,
 ) {
     Box(
@@ -54,8 +65,17 @@ fun CoinsListContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+
+        if (state.chartState != null){
+            CoinChartDialog(
+                uiChartState = state.chartState,
+                onDismiss = onDismissChart
+            )
+        }
+
         CoinsList(
             coins = state.coins,
+            onCoinLongPress = onCoinLongPress,
             onCoinClicked = onCoinClicked
         )
     }
@@ -64,6 +84,7 @@ fun CoinsListContent(
 @Composable
 fun CoinsList(
     coins: List<UiCoinListItem>,
+    onCoinLongPress: (String) -> Unit,
     onCoinClicked: (String) -> Unit,
 ) {
     Box(
@@ -86,6 +107,7 @@ fun CoinsList(
             items(coins) { coin ->
                 CoinListItem(
                     coin = coin,
+                    onCoinLongPress = onCoinLongPress,
                     onCoinClicked = onCoinClicked
                 )
             }
@@ -93,16 +115,21 @@ fun CoinsList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CoinListItem(
     coin: UiCoinListItem,
+    onCoinLongPress: (String) -> Unit,
     onCoinClicked: (String) -> Unit,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCoinClicked(coin.id) }
+            .combinedClickable(
+                onLongClick = {onCoinLongPress(coin.id)},
+                onClick = {onCoinClicked(coin.id)}
+            )
             .padding(16.dp)
     ) {
         AsyncImage(
@@ -144,4 +171,51 @@ fun CoinListItem(
             )
         }
     }
+}
+
+
+@Composable
+fun CoinChartDialog(
+    uiChartState: UiChartState,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        modifier = Modifier.fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "24h Price chart for ${uiChartState.coinName}",
+            )
+        },
+        text = {
+            if (uiChartState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                }
+            } else {
+                PerformanceChart(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(16.dp),
+                    nodes = uiChartState.sparkLine,
+                    profitColor = LocalCoinRoutineColorsPalette.current.profitGreen,
+                    lossColor = LocalCoinRoutineColorsPalette.current.lossRed,
+                )
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            Button(
+                onClick = onDismiss
+            ) {
+                Text(
+                    text = "Close",
+                )
+            }
+        }
+    )
 }
